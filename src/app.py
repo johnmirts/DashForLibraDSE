@@ -3,11 +3,13 @@ import pandas as pd
 import plotly.express as px
 from dash import Dash, dcc, html, Input, Output, State, callback
 import dash_ag_grid as dag
+import plotly.graph_objects as go
 
 # Import data
 df_fs = pd.read_csv("D:\\OneDrive\\Research\\Libra\\Application studies\\20240722_2D_ArchBridge_symmetric_v1.3.0 (Dash)\\data\\data_fs.csv")
 df_np = pd.read_csv("D:\\OneDrive\\Research\\Libra\\Application studies\\20240722_2D_ArchBridge_symmetric_v1.3.0 (Dash)\\data\\data_np.csv")
 df_fA = pd.read_csv("D:\\OneDrive\\Research\\Libra\\Application studies\\20240722_2D_ArchBridge_symmetric_v1.3.0 (Dash)\\data\\data_fA.csv")
+df = pd.read_csv("D:\\OneDrive\\Research\\Libra\\Application studies\\20240722_2D_ArchBridge_symmetric_v1.3.0 (Dash)\\data\\data_all_params.csv")
 
 # Get the number of designs AND total steps/iterations
 designs = df_fs.shape[0]
@@ -26,9 +28,8 @@ server = app.server
 app.layout = [html.Div(
     children = "Using the Dash application for DSE and interpreting Libra generated designs"),
               html.Hr(),
-              html.H3("You have imported " + str(df_fs.shape[0]) + " designs."),
+              html.H3("You have imported " + str(df_fs.shape[0]) + " designs. Their parameters are showcased below."),
               #----------------------------------------------------------------
-              html.H4("Below, their parameters are showcased."),
               dag.AgGrid(
                   id="all-parameters-table",
                   columnDefs=[{"field": x} for x in df_fs.columns],
@@ -54,6 +55,7 @@ app.layout = [html.Div(
               ),
               #----------------------------------------------------------------
               html.H3("Below, the parameter histograms per iteration (step) are showcased."),
+              #----------------------------------------------------------------
               html.H4("Select the parameter you wish to investigate:"),
               dcc.Dropdown(
                   id="dropdown-histogram-value",
@@ -64,7 +66,7 @@ app.layout = [html.Div(
                          steps-1,
                          1,
                          value=0,
-                        id="slider-iteration"
+                        id="slider-histogram-iteration"
                ),
                #html.Div(id='slider-output-container'),
               #----------------------------------------------------------------
@@ -72,9 +74,44 @@ app.layout = [html.Div(
                   id="histogram",
                   figure= {},
                   ),
-              html.Hr()
+              #----------------------------------------------------------------
+              html.H3("Below, the parallel coordinates per iteration (step) are showcased."),
+              #----------------------------------------------------------------
+              html.H4("Select the parameter you wish to investigate:"),
+              dcc.Dropdown(
+                  id="dropdown-parallelcoords-value",
+                  options=histogram_values,
+                  value = histogram_values[0]),
+              html.H4("Select how the parallel coordinates lines will be sorted:"),
+              dcc.Dropdown(
+                  id="dropdown-parallelcoords-sorting-metrics",
+                  options=df1,
+                  value="out:StaticAction"),
+              html.H4("Sorting order:"),
+              dcc.RadioItems(
+                  id="radiobutton-parallelcoords-sorting-order",
+                  options=["Ascending", "Descending"],
+                  value="Ascending"),
+              html.H4("Select the color style:"),
+              dcc.Dropdown(
+                  id="dropdown-parallelcoords-colorstyle",
+                  options=["Plotly3 (sequetial)", "Magma (sequential)", "Grayscale (sequential)", "Tealrose (diverging)"],
+                  value = "Grayscale (sequential)"),
+              html.H4("Select the background color:"),
+              dcc.RadioItems(
+                  id="radiobutton-parallelcoords-background",
+                  options=["Black", "White"],
+                  value="Black"),
+              #----------------------------------------------------------------
+              dcc.Graph(
+                  id="parallelcoords",
+                  figure= {}
+                  )      
               ]
+              
 
+
+#----------------------------------------------------------------
 @callback(
     Output(component_id="sorted-parameters-table", component_property="rowData"),
     Input(component_id="dropdown-sorting-metrics", component_property="value"),
@@ -86,11 +123,11 @@ def update_output(sort_metrics, sort_order):
     df_sorted = df_fs.sort_values(by=sort_metrics, ascending=asc_order)
     rowData=df_sorted.to_dict("records")
     return rowData
-
+#----------------------------------------------------------------
 @callback(
     Output(component_id="histogram", component_property="figure"),
     Input(component_id="dropdown-histogram-value", component_property="value"),
-    Input(component_id="slider-iteration", component_property="value")
+    Input(component_id="slider-histogram-iteration", component_property="value")
 )
 def update_histograms(parameter, iteration_value):
     if parameter == "Force Selection param":
@@ -99,7 +136,54 @@ def update_histograms(parameter, iteration_value):
         fig = px.histogram(df_np, x="in:np_" + str(iteration_value), nbins=200)
     elif parameter == "Force Indeterminacies (A) param":
         fig = px.histogram(df_fA, x="in:fA_" + str(iteration_value), nbins=200)
-    fig.update_layout(bargap=0.05)
+    fig.update_layout(bargap=0.1)
+    return fig
+#----------------------------------------------------------------
+@callback(
+    Output(component_id="parallelcoords", component_property="figure"),
+    Input(component_id="dropdown-parallelcoords-value", component_property="value"),
+    Input(component_id="dropdown-parallelcoords-sorting-metrics", component_property="value"),
+    Input(component_id="radiobutton-parallelcoords-sorting-order", component_property="value"),
+    Input(component_id="dropdown-parallelcoords-colorstyle", component_property="value"),
+    Input(component_id="radiobutton-parallelcoords-background", component_property="value"),
+)
+def update_parallelcoords(parameter, sort_by, ascending_order, color_style, background_color):
+    
+    asc_order=False
+    if ascending_order=="Ascending": asc_order = True
+    
+    if parameter == "Force Selection param":
+        df_pc = df_fs.sort_values(by=sort_by, ascending=asc_order)
+        title_fig="Parallel coordinates for Force Selection param"
+    elif parameter == "Node Placement param":
+        df_pc = df_np.sort_values(by=sort_by, ascending=asc_order)
+        title_fig="Parallel coordinates for Node Placement param"
+    elif parameter == "Force Indeterminacies (A) param":
+        df_pc = df_fA.sort_values(by=sort_by, ascending=asc_order)
+        title_fig="Parallel coordinates for Force Indeterminacies A param"
+    
+    if color_style == "Plotly3 (sequetial)":
+        color_style_px = px.colors.sequential.Plotly3
+    elif color_style == "Magma (sequential)":
+        color_style_px = px.colors.sequential.Magma
+    elif color_style == "Grayscale (sequential)":
+        color_style_px = px.colors.sequential.gray
+    elif color_style == "Tealrose (diverging)":
+        color_style_px = px.colors.diverging.Tealrose
+    
+    fig = px.parallel_coordinates(
+            df_pc,
+            color=sort_by,
+            title=title_fig,
+            color_continuous_scale=color_style_px,
+            range_color = [min(df_pc[sort_by]), max(df_pc[sort_by])],
+        )
+        
+    if background_color =="Black":
+        fig.update_layout(
+            paper_bgcolor = "black"
+        )
+       
     return fig
 
 # Run the app
