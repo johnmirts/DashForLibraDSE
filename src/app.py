@@ -106,7 +106,11 @@ app.layout = [html.Div(
               dcc.Graph(
                   id="parallelcoords",
                   figure= {}
-                  )      
+                  ),
+                #   dcc.Graph(
+                #       id="parallelcoords2",
+                #       figure= {}
+                #       )
               ]
               
 
@@ -131,11 +135,11 @@ def update_output(sort_metrics, sort_order):
 )
 def update_histograms(parameter, iteration_value):
     if parameter == "Force Selection param":
-        fig = px.histogram(df_fs, x="in:fs_" + str(iteration_value), nbins=200)
+        fig = px.histogram(data_frame = df_fs, x="in:fs_" + str(iteration_value), nbins=200)
     elif parameter == "Node Placement param":
-        fig = px.histogram(df_np, x="in:np_" + str(iteration_value), nbins=200)
+        fig = px.histogram(data_frame = df_np, x="in:np_" + str(iteration_value), nbins=200)
     elif parameter == "Force Indeterminacies (A) param":
-        fig = px.histogram(df_fA, x="in:fA_" + str(iteration_value), nbins=200)
+        fig = px.histogram(data_frame = df_fA, x="in:fA_" + str(iteration_value), nbins=200)
     fig.update_layout(bargap=0.1)
     return fig
 #----------------------------------------------------------------
@@ -172,7 +176,7 @@ def update_parallelcoords(parameter, sort_by, ascending_order, color_style, back
         color_style_px = px.colors.diverging.Tealrose
     
     fig = px.parallel_coordinates(
-            df_pc,
+            data_frame=df_pc,
             color=sort_by,
             title=title_fig,
             color_continuous_scale=color_style_px,
@@ -185,6 +189,24 @@ def update_parallelcoords(parameter, sort_by, ascending_order, color_style, back
         )
        
     return fig
+
+# @callback(
+#     Output(component_id="parallelcoords2", component_property="figure"),
+#     Input(component_id="radiobutton-parallelcoords-background", component_property="value"),
+#     Input(component_id="histogram", component_property="hoverData"),
+# )
+# def update_hover(background_color, hover_data):
+#     print(hover_data)
+#     filtering_value = hover_data["out:StaticAction"]
+#     d_temp = df[df["out:StaticAction"] == filtering_value]
+#     fig = px.scatter(d_temp, x="in:fs_0", y="in:np_0")
+    
+#     if background_color =="Black":
+#         fig.update_layout(
+#             paper_bgcolor = "black"
+#         )
+       
+#     return fig
 
 # Run the app
 if __name__ == "__main__":
