@@ -111,8 +111,7 @@ app.layout = [html.Div(
                 #       id="parallelcoords2",
                 #       figure= {}
                 #       )
-              ]
-              
+              ]              
 
 
 #----------------------------------------------------------------
@@ -135,11 +134,11 @@ def update_output(sort_metrics, sort_order):
 )
 def update_histograms(parameter, iteration_value):
     if parameter == "Force Selection param":
-        fig = px.histogram(data_frame = df_fs, x="in:fs_" + str(iteration_value), nbins=200)
+        fig = px.histogram(data_frame = df_fs, x="in:fs_" + str(iteration_value), nbins=100)
     elif parameter == "Node Placement param":
-        fig = px.histogram(data_frame = df_np, x="in:np_" + str(iteration_value), nbins=200)
+        fig = px.histogram(data_frame = df_np, x="in:np_" + str(iteration_value), nbins=100)
     elif parameter == "Force Indeterminacies (A) param":
-        fig = px.histogram(data_frame = df_fA, x="in:fA_" + str(iteration_value), nbins=200)
+        fig = px.histogram(data_frame = df_fA, x="in:fA_" + str(iteration_value), nbins=50)
     fig.update_layout(bargap=0.1)
     return fig
 #----------------------------------------------------------------
