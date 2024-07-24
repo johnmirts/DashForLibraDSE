@@ -12,12 +12,12 @@ df_fA = pd.read_csv("D:\\OneDrive\\Research\\Libra\\Application studies\\2024072
 df = pd.read_csv("D:\\OneDrive\\Research\\Libra\\Application studies\\20240722_2D_ArchBridge_symmetric_v1.3.0 (Dash)\\data\\data_all_params.csv")
 
 # Get the number of designs AND total steps/iterations
-designs = df_fs.shape[0]
-steps = len([col for col in df_fs.columns if 'in:' in col])
+designs = df.shape[0]
+steps = len([col for col in df.columns if 'in:' in col])
 
 # List all the metric column labels
-df1 = df_fs.columns.values[steps:len(df_fs.columns.values)-1]
-df2 = df_fs.iloc[:,:steps]
+df1 = df.columns.values[steps:len(df.columns.values)-1]
+df2 = df.iloc[:,:steps]
 histogram_values = ["Force Selection param", "Node Placement param", "Force Indeterminacies (A) param"]
 
 # Instatiate the app
@@ -28,12 +28,12 @@ server = app.server
 app.layout = [html.Div(
     children = "Using the Dash application for DSE and interpreting Libra generated designs"),
               html.Hr(),
-              html.H3("You have imported " + str(df_fs.shape[0]) + " designs. Their parameters are showcased below."),
+              html.H3("You have imported " + str(designs) + " designs. Their parameters are showcased below."),
               #----------------------------------------------------------------
               dag.AgGrid(
                   id="all-parameters-table",
-                  columnDefs=[{"field": x} for x in df_fs.columns],
-                  rowData=df_fs.to_dict("records"),
+                  columnDefs=[{"field": x} for x in df.columns],
+                  rowData=df.to_dict("records"),
                   dashGridOptions={"pagination":True}
               ),
               #----------------------------------------------------------------
@@ -49,8 +49,8 @@ app.layout = [html.Div(
                   value="Ascending"),
               dag.AgGrid(
                   id="sorted-parameters-table",
-                  columnDefs=[{"field": x} for x in df_fs.columns],
-                  rowData=df_fs.to_dict("records"),
+                  columnDefs=[{"field": x} for x in df.columns],
+                  rowData=df.to_dict("records"),
                   dashGridOptions={"pagination":True}
               ),
               #----------------------------------------------------------------
@@ -61,7 +61,7 @@ app.layout = [html.Div(
                   id="dropdown-histogram-value",
                   options=histogram_values,
                   value = histogram_values[0]),
-              html.H4("Select the parameter (step) you wish to investigate:"),
+              html.H4("Select the iteration (step) you wish to investigate:"),
               dcc.Slider(0, 
                          steps-1,
                          1,
@@ -124,7 +124,7 @@ app.layout = [html.Div(
 def update_output(sort_metrics, sort_order):
     asc_order=False
     if sort_order=="Ascending": asc_order = True
-    df_sorted = df_fs.sort_values(by=sort_metrics, ascending=asc_order)
+    df_sorted = df.sort_values(by=sort_metrics, ascending=asc_order)
     rowData=df_sorted.to_dict("records")
     return rowData
 #----------------------------------------------------------------
