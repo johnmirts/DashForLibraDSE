@@ -5,7 +5,6 @@ attrs==23.2.0
 backcall==0.2.0
 beautifulsoup4==4.12.3
 bleach==6.0.0
-certifi @ file:///C:/b/abs_85o_6fm0se/croot/certifi_1671487778835/work/certifi
 cffi==1.15.1
 charset-normalizer==3.3.2
 click==8.1.7
